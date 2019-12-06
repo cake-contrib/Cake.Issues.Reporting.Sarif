@@ -102,6 +102,8 @@
                 result.RuleIndex.ShouldBe(-1); // because there's no rule metadata to point to.
                 result.Message.Text.ShouldBe("Message Foo.");
                 result.Message.Markdown.ShouldBeNull();
+                result.Level.ShouldBe(FailureLevel.Error);
+                result.Kind.ShouldBe(ResultKind.Fail);
 
                 result.Locations.Count.ShouldBe(1);
                 PhysicalLocation physicalLocation = result.Locations[0].PhysicalLocation;
@@ -129,6 +131,8 @@
                 result.RuleIndex.ShouldBe(0); // The index of the metadata for this rule in the rules array.
                 result.Message.Text.ShouldBe("Message Bar.");
                 result.Message.Markdown.ShouldBe("Message Bar -- now in **Markdown**!");
+                result.Level.ShouldBe(FailureLevel.Warning);
+                result.Kind.ShouldBe(ResultKind.Fail);
 
                 result.Locations.Count.ShouldBe(1);
                 physicalLocation = result.Locations[0].PhysicalLocation;
