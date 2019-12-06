@@ -57,12 +57,25 @@
                             .OfRule("Rule Foo")
                             .WithPriority(IssuePriority.Error)
                             .Create(),
+
+                        // Issue to exercise creation of rule metadata with helpUri, and messages
+                        // in Markdown format.
                         IssueBuilder
                             .NewIssue("Message Bar.", "ProviderType Bar", "ProviderName Bar")
                             .InFile(@"src\Cake.Issues.Reporting.Sarif.Tests\SarifIssueReportGeneratorTests.cs", 12)
                             .OfRule("Rule Bar", new Uri("https://www.example.come/rules/bar.html"))
                             .WithPriority(IssuePriority.Warning)
                             .WithMessageInMarkdownFormat("Message Bar -- now in **Markdown**!")
+                            .Create(),
+
+                        // Issue to exercise the corner case where ruleId is absent (so no rule
+                        // metadata is created) but helpUri is present (so it is stored in the
+                        // result's property bag.
+                        IssueBuilder
+                            .NewIssue("Message Bar 2.", "ProviderType Bar", "ProviderName Bar")
+                            .InFile(@"src\Cake.Issues.Reporting.Sarif.Tests\SarifIssueReportGeneratorTests.cs", 42)
+                            .OfRule(null, new Uri("https://www.example.come/rules/bar2.html"))
+                            .WithPriority(IssuePriority.Warning)
                             .Create(),
                     };
 
@@ -109,7 +122,7 @@
                 rule.Id.ShouldBe("Rule Bar");
                 rule.HelpUri.OriginalString.ShouldBe("https://www.example.come/rules/bar.html");
 
-                run.Results.Count.ShouldBe(1);
+                run.Results.Count.ShouldBe(2);
 
                 result = run.Results[0];
                 result.RuleId.ShouldBe("Rule Bar");
@@ -121,6 +134,13 @@
                 physicalLocation = result.Locations[0].PhysicalLocation;
                 physicalLocation.ArtifactLocation.Uri.OriginalString.ShouldBe("src/Cake.Issues.Reporting.Sarif.Tests/SarifIssueReportGeneratorTests.cs");
                 physicalLocation.Region.StartLine.ShouldBe(12);
+
+                // This run also includes an issue with a rule URL but no rule name, so we'll find
+                // the rule URL in the result's property bag.
+                result = run.Results[1];
+                result.RuleId.ShouldBeNull();
+                result.RuleIndex.ShouldBe(-1);
+                result.GetProperty(SarifIssueReportGenerator.RuleUrlPropertyName).ShouldBe("https://www.example.come/rules/bar2.html");
 
                 run.OriginalUriBaseIds.Count.ShouldBe(1);
                 run.OriginalUriBaseIds[SarifIssueReportGenerator.RepoRootUriBaseId].Uri.LocalPath.ShouldBe(SarifIssueReportFixture.RepositoryRootPath);

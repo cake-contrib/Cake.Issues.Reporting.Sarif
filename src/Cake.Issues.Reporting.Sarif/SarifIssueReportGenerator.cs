@@ -19,6 +19,12 @@
         /// </summary>
         internal const string RepoRootUriBaseId = "REPOROOT";
 
+        /// <summary>
+        /// The name of the result object property bag property that holds the rule URL in the
+        /// unusual case where the ruleId is absent but the URL is present.
+        /// </summary>
+        internal const string RuleUrlPropertyName = "RuleUrl";
+
         private readonly SarifIssueReportFormatSettings sarifIssueReportFormatSettings;
         private List<ReportingDescriptor> rules;
         private Dictionary<string, int> ruleIndices;
@@ -140,7 +146,7 @@
                     // In the unusual case where there is a rule URL but no rule name, we put the
                     // URL in the result's property bag, because there's no rule whose metadata
                     // can hold it.
-                    result.SetProperty("RuleUrl", issue.RuleUrl);
+                    result.SetProperty(RuleUrlPropertyName, issue.RuleUrl);
                 }
             }
 
