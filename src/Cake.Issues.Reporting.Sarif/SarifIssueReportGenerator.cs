@@ -1,12 +1,12 @@
 ﻿namespace Cake.Issues.Reporting.Sarif
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using Cake.Core.Diagnostics;
     using Cake.Core.IO;
     using Microsoft.CodeAnalysis.Sarif;
-    using Microsoft.CodeAnalysis.Sarif.Readers;
     using Newtonsoft.Json;
 
     /// <summary>
@@ -14,7 +14,14 @@
     /// </summary>
     internal class SarifIssueReportGenerator : IssueReportFormat
     {
+        /// <summary>
+        /// The symbolic name for the repository root location, used in UriBaseIds.
+        /// </summary>
+        internal const string RepoRootUriBaseId = "REPOROOT";
+
         private readonly SarifIssueReportFormatSettings sarifIssueReportFormatSettings;
+        private List<ReportingDescriptor> rules;
+        private Dictionary<string, int> ruleIndices;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SarifIssueReportGenerator"/> class.
@@ -46,8 +53,10 @@
                 log.Runs = new List<Run>();
                 foreach (var issueGroup in from issue in issues group issue by issue.ProviderType)
                 {
-                    log.Runs.Add(
-                        new Run
+                    this.rules = new List<ReportingDescriptor>();
+                    this.ruleIndices = new Dictionary<string, int>();
+
+                    Run run = new Run
                         {
                             Tool =
                                 new Tool
@@ -61,7 +70,22 @@
                             Results =
                                 (from issue in issueGroup
                                  select this.GetResult(issue)).ToList(),
-                        });
+                            OriginalUriBaseIds = new Dictionary<string, ArtifactLocation>
+                            {
+                                [RepoRootUriBaseId] =
+                                    new ArtifactLocation
+                                    {
+                                        Uri = new Uri(this.Settings.RepositoryRoot.FullPath, UriKind.Absolute),
+                                    },
+                            },
+                        };
+
+                    if (this.rules.Any())
+                    {
+                        run.Tool.Driver.Rules = this.rules;
+                    }
+
+                    log.Runs.Add(run);
                 }
             }
 
@@ -83,6 +107,7 @@
                         new Message
                         {
                             Text = issue.MessageText,
+                            Markdown = issue.MessageMarkdown,
                         },
                     Kind = issue.Kind(),
                     Level = issue.Level(),
@@ -95,7 +120,28 @@
 
             if (issue.RuleUrl != null)
             {
-                result.SetProperty("RuleUrl", issue.RuleUrl);
+                if (!string.IsNullOrEmpty(issue.Rule))
+                {
+                    if (!this.ruleIndices.ContainsKey(issue.Rule))
+                    {
+                        this.ruleIndices.Add(issue.Rule, this.rules.Count);
+                        this.rules.Add(
+                            new ReportingDescriptor
+                            {
+                                Id = issue.Rule,
+                                HelpUri = issue.RuleUrl,
+                            });
+                    }
+
+                    result.RuleIndex = this.ruleIndices[issue.Rule];
+                }
+                else
+                {
+                    // In the unusual case where there is a rule URL but no rule name, we put the
+                    // URL in the result's property bag, because there's no rule whose metadata
+                    // can hold it.
+                    result.SetProperty("RuleUrl", issue.RuleUrl);
+                }
             }
 
             return result;
