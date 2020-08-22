@@ -33,7 +33,7 @@
     <PackageReference Include="Cake.Issues">
       <Version>0.9.0-beta0005</Version>
     </PackageReference>
-    <PackageReference Include="Cake.Issues.Reporting" Version="0.9.0-beta0002" />
+    <PackageReference Include="Cake.Issues.Reporting" Version="0.9.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers">
       <Version>3.3.0</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
