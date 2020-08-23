@@ -161,6 +161,207 @@
                 run.OriginalUriBaseIds.Count.ShouldBe(1);
                 run.OriginalUriBaseIds[SarifIssueReportGenerator.RepoRootUriBaseId].Uri.LocalPath.ShouldBe(SarifIssueReportFixture.RepositoryRootPath);
             }
+
+            [Fact]
+            public void Should_Have_Separate_Run_For_Every_Issue_Provider()
+            {
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var providerTypeA = "ProviderTypeA Foo";
+                var providerTypeB = "ProviderTypeB Foo";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", providerTypeA, "ProviderName Foo")
+                            .Create(),
+                        IssueBuilder
+                            .NewIssue("Message Foo.", providerTypeB, "ProviderName Foo")
+                            .Create(),
+                        IssueBuilder
+                            .NewIssue("Message Foo.", providerTypeA, "ProviderName Foo")
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(2);
+
+                var runA = sarifLog.Runs[0];
+                runA.Tool.Driver.Name.ShouldBe(providerTypeA);
+
+                var runB = sarifLog.Runs[1];
+                runB.Tool.Driver.Name.ShouldBe(providerTypeB);
+            }
+
+            [Fact]
+            public void Should_Set_Driver_Name()
+            {
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var providerType = "ProviderType Foo";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", providerType, "ProviderName Foo")
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(1);
+                var run = sarifLog.Runs[0];
+
+                run.Tool.Driver.Name.ShouldBe(providerType);
+            }
+
+            [Fact]
+            public void Should_Not_Set_Rules_If_No_RuleUrl()
+            {
+                // If run doesn't have any rules that specify a help URI, we shouldn't bother
+                // adding rule metadata.
+
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var providerType = "ProviderType Foo";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", providerType, "ProviderName Foo")
+                            .OfRule("Rule Foo")
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(1);
+                var run = sarifLog.Runs[0];
+
+                run.Tool.Driver.Rules.ShouldBeNull();
+            }
+
+            [Fact]
+            public void Should_Set_Rules_If_One_RuleUrl()
+            {
+                // Runs which have a  rule that specifies a help URI should have added rule metadata.
+
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var ruleId = "Rule Bar";
+                var ruleUrl = "https://www.example.come/rules/bar.html";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", "ProviderType Foo", "ProviderName Foo")
+                            .OfRule(ruleId, new Uri(ruleUrl))
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(1);
+                var run = sarifLog.Runs[0];
+
+                var rules = run.Tool.Driver.Rules;
+                rules.Count.ShouldBe(1);
+
+                var rule = rules[0];
+                rule.Id.ShouldBe(ruleId);
+                rule.HelpUri.OriginalString.ShouldBe(ruleUrl);
+            }
+
+            [Fact]
+            public void Should_Set_Rules_If_Some_RuleUrl()
+            {
+                // Runs which have a  rule that specifies a help URI should have added rule metadata.
+
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var ruleId = "Rule Bar";
+                var ruleUrl = "https://www.example.come/rules/bar.html";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", "ProviderType Foo", "ProviderName Foo")
+                            .OfRule("Rule Foo")
+                            .Create(),
+                        IssueBuilder
+                            .NewIssue("Message Foo.", "ProviderType Foo", "ProviderName Foo")
+                            .OfRule(ruleId, new Uri(ruleUrl))
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(1);
+                var run = sarifLog.Runs[0];
+
+                var rules = run.Tool.Driver.Rules;
+                rules.Count.ShouldBe(1);
+
+                var rule = rules[0];
+                rule.Id.ShouldBe(ruleId);
+                rule.HelpUri.OriginalString.ShouldBe(ruleUrl);
+            }
+
+            [Fact]
+            public void Should_Set_Rules_If_RuleUrl_Without_RuleName()
+            {
+                // Run that include an issue with a rule URL but no rule name, should have rule URL in the result's property bag.
+
+                // Given
+                var fixture = new SarifIssueReportFixture();
+                var ruleUrl = "https://www.example.come/rules/bar.html";
+                var issues =
+                     new List<IIssue>
+                     {
+                        IssueBuilder
+                            .NewIssue("Message Foo.", "ProviderType Foo", "ProviderName Foo")
+                            .OfRule(null, new Uri(ruleUrl))
+                            .Create(),
+                     };
+
+                // When
+                var logContents = fixture.CreateReport(issues);
+
+                // Then
+                var sarifLog = JsonConvert.DeserializeObject<SarifLog>(logContents);
+
+                sarifLog.Runs.Count.ShouldBe(1);
+                var run = sarifLog.Runs[0];
+
+                run.Tool.Driver.Rules.ShouldBeNull();
+
+                run.Results.Count.ShouldBe(1);
+                var result = run.Results[0];
+                result.RuleId.ShouldBeNull();
+                result.RuleIndex.ShouldBe(-1);
+                result.GetProperty(SarifIssueReportGenerator.RuleUrlPropertyName).ShouldBe(ruleUrl);
+            }
         }
     }
 }
