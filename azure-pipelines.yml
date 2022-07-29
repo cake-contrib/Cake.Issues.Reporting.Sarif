@@ -85,7 +85,7 @@ jobs:
     - publish: $(Build.SourcesDirectory)/tests/output
       artifact: Integration Tests macOS 10.15 (.NET Core tool)
       displayName: 'Publish generated reports as build artifact'
-  # Integration Tests Ubuntu 16.04 (.NET Core tool)
+  # Integration Tests Ubuntu 18.04 (.NET Core tool)
   - job: Test_ubuntu_DotNetCoreTool
     displayName: Integration Tests Ubuntu 16.04 (.NET Core tool)
     dependsOn: Build
