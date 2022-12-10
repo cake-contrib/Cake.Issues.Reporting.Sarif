@@ -57,12 +57,12 @@ jobs:
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)'
         artifactName: CodeAnalysisLogs
-  # Integration Tests macOS 10.15 (.NET Core tool)
+  # Integration Tests macOS 11 (.NET Core tool)
   - job: Test_macOS_DotNetCoreTool
-    displayName: Integration Tests macOS 10.15 (.NET Core tool)
+    displayName: Integration Tests macOS 11 (.NET Core tool)
     dependsOn: Build
     pool:
-      vmImage: 'macOS-10.15'
+      vmImage: 'macOS-11'
     steps:
     - task: NodeTool@0
       inputs:
@@ -83,7 +83,7 @@ jobs:
       workingDirectory: ./tests/
       displayName: 'Run integration tests'
     - publish: $(Build.SourcesDirectory)/tests/output
-      artifact: Integration Tests macOS 10.15 (.NET Core tool)
+      artifact: Integration Tests macOS 11 (.NET Core tool)
       displayName: 'Publish generated reports as build artifact'
   # Integration Tests Ubuntu 18.04 (.NET Core tool)
   - job: Test_ubuntu_DotNetCoreTool
