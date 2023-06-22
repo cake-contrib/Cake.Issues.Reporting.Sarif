@@ -105,12 +105,12 @@ jobs:
     - publish: $(Build.SourcesDirectory)/tests/output
       artifact: Integration Tests macOS 11 (.NET Core tool)
       displayName: 'Publish generated reports as build artifact'
-  # Integration Tests Ubuntu 18.04 (.NET Core tool)
+  # Integration Tests Ubuntu 20.04 (.NET Core tool)
   - job: Test_ubuntu_DotNetCoreTool
-    displayName: Integration Tests Ubuntu 18.04 (.NET Core tool)
+    displayName: Integration Tests Ubuntu 20.04 (.NET Core tool)
     dependsOn: Build
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UseDotNet@2
       inputs:
@@ -135,7 +135,7 @@ jobs:
       workingDirectory: ./tests/
       displayName: 'Run integration tests'
     - publish: $(Build.SourcesDirectory)/tests/output
-      artifact: Integration Tests Ubuntu 18.04 (.NET Core tool)
+      artifact: Integration Tests Ubuntu 20.04 (.NET Core tool)
       displayName: 'Publish generated reports as build artifact'
   # SARIF file deployment
   # - job: Deploy_Sarif_Files
